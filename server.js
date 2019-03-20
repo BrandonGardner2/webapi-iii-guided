@@ -15,7 +15,16 @@ function teamer(req, res, next) {
   next();
 }
 
+function noPass(req, res, next) {
+  const seconds = new Date().getSeconds();
+  if (seconds % 3 === 0) {
+    res.status(403).json("You shall not pass!");
+  }
+  next();
+}
+
 server.use(teamer);
+server.use(noPass);
 server.use(express.json());
 server.use(helmet());
 
@@ -23,11 +32,21 @@ server.use(helmet());
 server.use("/api/hubs", hubsRouter);
 
 //Route handlers ARE middleware
-server.get("/", (req, res, next) => {
+server.get("/", restricted, (req, res, next) => {
   res.send(`
     <h2>Lambda Hubs API</h2>
     <p>Welcome ${req.team} to the Lambda Hubs API</p>
     `);
 });
+
+function restricted(req, res, next) {
+  const password = req.headers.password;
+
+  if (password === "melon") {
+    next();
+  } else {
+    res.status(401).send("You shall not pass!!");
+  }
+}
 
 module.exports = server;
